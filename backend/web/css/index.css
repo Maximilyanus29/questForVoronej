@@ -1,0 +1,16 @@
+.body-content{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.category{
+    display: block;
+    font-size: 3em;
+    border-radius: 50px;
+    border: 1px solid #333333;
+    padding: 0 15px;
+
+}
