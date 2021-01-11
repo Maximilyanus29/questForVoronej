@@ -63,8 +63,12 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
+        $model = new Product();
 
-        return $this->redirect(['product/index']);
+
+        return $this->render('index',[
+            'model'=>$model,
+        ]);
     }
 
 

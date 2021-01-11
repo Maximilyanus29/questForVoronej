@@ -8,12 +8,19 @@ use Yii;
  * This is the model class for table "product".
  *
  * @property int $id
- * @property string $vendor_code
+ * @property string $article
+
+ * @property int $length
+ * @property int $band
+ * @property int $thickness
  * @property int $price
- * @property int $width
- * @property int $height
- * @property int $lenght
- * @property int $on_warehouse
+ * @property int $quantity
+ * @property int $parent_id
+ *
+ * @property ProductParent $parent
+ * @property Thickness $thickness0
+ * @property Band $band0
+ * @property Length $length0
  */
 class Product extends \yii\db\ActiveRecord
 {
@@ -31,10 +38,14 @@ class Product extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['vendor_code', 'price', 'width', 'height', 'lenght', 'on_warehouse'], 'required'],
-            [['price', 'width', 'height', 'lenght', 'on_warehouse'], 'integer'],
-            [['vendor_code'], 'string', 'max' => 30],
-            [['vendor_code'], 'unique'],
+            [['article', 'description', 'length', 'band', 'thickness', 'price', 'quantity', 'parent_id'], 'required'],
+
+            [['length', 'band', 'thickness', 'price', 'quantity', 'parent_id'], 'integer'],
+            [['article'], 'string', 'max' => 30],
+            [['parent_id'], 'exist', 'skipOnError' => true, 'targetClass' => ProductParent::className(), 'targetAttribute' => ['parent_id' => 'id']],
+            [['thickness'], 'exist', 'skipOnError' => true, 'targetClass' => Thickness::className(), 'targetAttribute' => ['thickness' => 'id']],
+            [['band'], 'exist', 'skipOnError' => true, 'targetClass' => Band::className(), 'targetAttribute' => ['band' => 'id']],
+            [['length'], 'exist', 'skipOnError' => true, 'targetClass' => Length::className(), 'targetAttribute' => ['length' => 'id']],
         ];
     }
 
@@ -45,12 +56,54 @@ class Product extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'vendor_code' => 'Vendor Code',
+            'article' => 'Article',
+
+            'length' => 'Length',
+            'band' => 'Band',
+            'thickness' => 'Thickness',
             'price' => 'Price',
-            'width' => 'Width',
-            'height' => 'Height',
-            'lenght' => 'Lenght',
-            'on_warehouse' => 'On Warehouse',
+            'quantity' => 'Quantity',
+            'parent_id' => 'Parent ID',
         ];
+    }
+
+    /**
+     * Gets query for [[Parent]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getParent()
+    {
+        return $this->hasOne(ProductParent::className(), ['id' => 'parent_id']);
+    }
+
+    /**
+     * Gets query for [[Thickness0]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getThickness0()
+    {
+        return $this->hasOne(Thickness::className(), ['id' => 'thickness']);
+    }
+
+    /**
+     * Gets query for [[Band0]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getBand0()
+    {
+        return $this->hasOne(Band::className(), ['id' => 'band']);
+    }
+
+    /**
+     * Gets query for [[Length0]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getLength0()
+    {
+        return $this->hasOne(Length::className(), ['id' => 'length']);
     }
 }

@@ -1,16 +1,20 @@
-.body-content{
+body{
+    position: relative;
+}
+/*#NW { position:absolute; width:50%; height:100%; top:0;   left:0;  z-index: 9999  ;  }*/
+#NE { position:fixed; width:50%; height:50%; top:0;   left:50%;    }
+#SW { position:fixed; width:50%; height:50%; top:50%; left:0;     }
+#SE { position:fixed; width:50%; height:50%; top:50%; left:50%;     }
+
+.addProduct{
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
 
+
+    position:fixed; width:50%; height:50%; top:0;
 }
-
-.category{
-    display: block;
-    font-size: 3em;
-    border-radius: 50px;
-    border: 1px solid #333333;
-    padding: 0 15px;
-
+.addProduct input{
+    margin: 5px 0;
 }

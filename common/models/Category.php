@@ -9,6 +9,9 @@ use Yii;
  *
  * @property int $id
  * @property string $name
+ * @property string $description
+ *
+ * @property ProductParent[] $productParents
  */
 class Category extends \yii\db\ActiveRecord
 {
@@ -26,9 +29,9 @@ class Category extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name'], 'required'],
-            [['name'], 'string', 'max' => 30],
-            [['name'], 'unique'],
+            [['name', 'description'], 'required'],
+            [['description'], 'string'],
+            [['name'], 'string', 'max' => 255],
         ];
     }
 
@@ -40,6 +43,17 @@ class Category extends \yii\db\ActiveRecord
         return [
             'id' => 'ID',
             'name' => 'Name',
+            'description' => 'Description',
         ];
+    }
+
+    /**
+     * Gets query for [[ProductParents]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getProductParents()
+    {
+        return $this->hasMany(ProductParent::className(), ['in_category' => 'id']);
     }
 }

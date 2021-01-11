@@ -1,11 +1,17 @@
 <?php
 namespace frontend\controllers;
 
+use common\models\Band;
+use common\models\Length;
+use common\models\ProductParent;
 use common\models\Category;
 use common\models\Product;
 use common\models\ProductCRUD;
+use common\models\Thickness;
+use frontend\models\ChangeProduct;
 use frontend\models\FilterProduct;
 use frontend\models\ResendVerificationEmailForm;
+use frontend\models\SearchProduct;
 use frontend\models\VerifyEmailForm;
 use Yii;
 use yii\base\InvalidArgumentException;
@@ -79,101 +85,145 @@ class SiteController extends Controller
      *
      * @return mixed
      */
+
+
     public function actionIndex()
     {
-        $categories=Category::find()->all();
+//        $getParams = Yii::$app->request->get('GoodsSearch');
+//
+//        if ($getParams != null){
+//
+//            return "true";
+//        }
 
-        $searchModel = new ProductCRUD();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        $products=$dataProvider->query->all();
+        $model = ProductParent::find()->all();
+
+        //Пагинацию знаю как делать, но не успел, могу и в ручную сделать без помощи виджета и по своему запросу
+
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
-            'categories'=>$categories,
-            'products'=>$products,
+            'model'=>$model,
+
 
         ]);
 
 
-        return $this->render('index',['categories'=>$categories]);
     }
 
-    public function actionProduct($categoryId)
+
+    public function actionView($url)
     {
 
-        $searchModel = new ProductCRUD();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $this->layout='goods';
 
-        $products=$dataProvider->query->where(['in_category'=>$categoryId])->all();
+        $goods=ProductParent::findOne(['url'=>$url]);
 
-        return $this->render('product', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
-            'categoryId'=>$categoryId,
-            'products'=>$products,
+        if (!isset($goods)){
+            return $this->render('error',[
+                'name'=>"Ошибка",
+                'message'=>"Нет такого товара",
+            ]);
+        }
+
+        $connection = \Yii::$app->db;
+
+        $products_list = $connection->createCommand('
+             SELECT p.*,len.value as length, b.value as band, th.value as thinkness
+             from product as p 
+             LEFT JOIN length as len on p.length = len.id 
+             left join band as b on p.band = b.id 
+             left join thickness as th on p.thickness = th.id 
+             WHERE p.parent_id = :id
+')
+            ->bindValue(':id',$goods->id)
+            ->queryAll();
+
+
+//        отфильтровать по количеству если кол во 0
+        $products_list_in_stock = array_filter($products_list, function($v) {
+            return $v['quantity'] != 0;
+        });
+
+        $active_product=$products_list_in_stock[0]??null;
+
+
+        $list_length = $connection->createCommand('
+            select product.*, length.id as length_id, length.value as length_value FROM product 
+            left join length ON product.length = length.id WHERE parent_id = :id group by length.value 
+')
+            ->bindValue(':id',$goods->id)
+            ->queryAll();
+
+        $list_band = $connection->createCommand('
+            select product.*, band.id as band_id,  band.value as band_value FROM product  
+            left join band ON product.band = band.id WHERE parent_id = :id group by band.value 
+')
+            ->bindValue(':id',$goods->id)
+            ->queryAll();
+
+
+        $list_thickness = $connection->createCommand('
+            select product.*, thickness.id as thickness_id, thickness.value as thickness_value FROM product 
+            left join thickness ON product.thickness = thickness.id WHERE parent_id = :id group by thickness.value 
+')
+            ->bindValue(':id',$goods->id)
+            ->queryAll();
+
+
+
+
+        return $this->render('view', [
+            'goods'=>$goods,
+            'list_length'=>$list_length,
+            'list_band'=>$list_band,
+            'list_thickness'=>$list_thickness,
+            'products_list_in_stock'=>$products_list_in_stock,
+//            'products_list_in_stock'=>$products_list_in_stock,
+            'products_list'=>$products_list,
+            'active_product' =>$active_product,
 
         ]);
+
+
     }
 
-    public function actionProductsearchvendor()
+
+
+//аякс запрос при клике на параметр товара
+    public function actionGetProduct()
     {
 
-        $searchModel = new ProductCRUD();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
-        $products=$dataProvider->query->all();
-
-        return $this->render('product', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
-            'categoryId'=>$categoryId,
-            'products'=>$products,
-
-        ]);
-    }
+        $request = Yii::$app->request;
 
 
+        if($request->isPost) {
 
-    public function actionSearch()
-    {
-        $searchModel = new ProductCRUD();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+            $model = new ChangeProduct();
 
+            $data = $model->buildModel($request->bodyParams);
 
+            Yii::$app->response->format = Response::FORMAT_JSON;
 
-        return $this->render('search', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
-        ]);
-
-//        return $this->render('product', ['products' => $products, 'categoryName' => $categoryName->name, 'model' => $model, 'pages' => $pages]);
-    }
-
-
-    public function actionSearchajax()
-    {
-
-        Yii::$app->response->format = Response::FORMAT_JSON;
-
-        $searchModel = new ProductCRUD();
-
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
-        $products=$dataProvider->query->all();
-
-
-        return $products;
+            return $data;
 
 
 
 
+
+
+
+            //{"status":true,
+            //"goods_id":112,
+            //"price":920,
+            //"count":0,
+            //"handbookGoods":["67","88","419"],
+            //"handbook":{"9":["66","67"],"11":["91","89","87","88","90"],"19":["417","420","419","418","423"]}}
+
+        }
+//        SELECT p.*,len.value as length, b.value as band, th.value as thinkness from product as p LEFT JOIN length as len on p.length = len.id left join band as b on p.band = b.id left join thickness as th on p.thickness = th.id WHERE p.parent_id = 1
 
     }
-
-
-
 
 
     /**
