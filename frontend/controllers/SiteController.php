@@ -128,44 +128,46 @@ class SiteController extends Controller
 
         $connection = \Yii::$app->db;
 
-        $products_list = $connection->createCommand('
-             SELECT p.*,len.value as length, b.value as band, th.value as thinkness
-             from product as p 
-             LEFT JOIN length as len on p.length = len.id 
-             left join band as b on p.band = b.id 
-             left join thickness as th on p.thickness = th.id 
-             WHERE p.parent_id = :id
-')
-            ->bindValue(':id',$goods->id)
-            ->queryAll();
+
+        $active_product = Product::findOne([
+            'parent_id'=>$goods->id,
+            'quantity'=> "quantity > 1",
+        ]);
+
+
+
+
+
 
 
 //        отфильтровать по количеству если кол во 0
-        $products_list_in_stock = array_filter($products_list, function($v) {
-            return $v['quantity'] != 0;
-        });
 
-        $active_product=$products_list_in_stock[0]??null;
+//
+//        $products_list_in_stock = array_filter($products_list, function($v) {
+//            return $v->quantity != 0;
+//        });
+//
+//        $active_product=$products_list_in_stock[0]??null;
 
 
         $list_length = $connection->createCommand('
-            select product.*, length.id as length_id, length.value as length_value FROM product 
-            left join length ON product.length = length.id WHERE parent_id = :id group by length.value 
+            select product.*, length.id as length_id, length.value as length_value FROM product
+            left join length ON product.length = length.id WHERE parent_id = :id group by length.value
 ')
             ->bindValue(':id',$goods->id)
             ->queryAll();
 
         $list_band = $connection->createCommand('
-            select product.*, band.id as band_id,  band.value as band_value FROM product  
-            left join band ON product.band = band.id WHERE parent_id = :id group by band.value 
+            select product.*, band.id as band_id,  band.value as band_value FROM product
+            left join band ON product.band = band.id WHERE parent_id = :id group by band.value
 ')
             ->bindValue(':id',$goods->id)
             ->queryAll();
 
 
         $list_thickness = $connection->createCommand('
-            select product.*, thickness.id as thickness_id, thickness.value as thickness_value FROM product 
-            left join thickness ON product.thickness = thickness.id WHERE parent_id = :id group by thickness.value 
+            select product.*, thickness.id as thickness_id, thickness.value as thickness_value FROM product
+            left join thickness ON product.thickness = thickness.id WHERE parent_id = :id group by thickness.value
 ')
             ->bindValue(':id',$goods->id)
             ->queryAll();
@@ -174,14 +176,16 @@ class SiteController extends Controller
 
 
         return $this->render('view', [
-            'goods'=>$goods,
+//            'goods'=>$goods,
             'list_length'=>$list_length,
             'list_band'=>$list_band,
             'list_thickness'=>$list_thickness,
-            'products_list_in_stock'=>$products_list_in_stock,
 //            'products_list_in_stock'=>$products_list_in_stock,
-            'products_list'=>$products_list,
+////            'products_list_in_stock'=>$products_list_in_stock,
+//            'products_list'=>$products_list,
             'active_product' =>$active_product,
+                'goods'=>$goods,
+
 
         ]);
 
